@@ -3176,29 +3176,6 @@ int ReplicatedPG::do_osd_ops(OpContext *ctx, vector<OSDOp>& ops)
       break;
 
     case CEPH_OSD_OP_CACHE_TRY_FLUSH:
-      ++ctx->num_write;
-      {
-	if (ctx->lock_to_release != OpContext::NONE) {
-	  dout(10) << "cache-try-flush without SKIPRWLOCKS flag set" << dendl;
-	  result = -EINVAL;
-	  break;
-	}
-	if (pool.info.cache_mode == pg_pool_t::CACHEMODE_NONE) {
-	  result = -EINVAL;
-	  break;
-	}
-	if (!obs.exists) {
-	  result = 0;
-	  break;
-	}
-	if (oi.is_dirty()) {
-	  result = start_flush(ctx, false);
-	} else {
-	  result = 0;
-	}
-      }
-      break;
-
     case CEPH_OSD_OP_CACHE_FLUSH:
       ++ctx->num_write;
       {
@@ -3216,7 +3193,7 @@ int ReplicatedPG::do_osd_ops(OpContext *ctx, vector<OSDOp>& ops)
 	  break;
 	}
 	if (oi.is_dirty()) {
-	  result = start_flush(ctx, true);
+	  result = start_flush(ctx, op.op == CEPH_OSD_OP_CACHE_FLUSH);
 	} else {
 	  result = 0;
 	}
